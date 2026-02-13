@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valentine Surprise</title>
+    <style>
+        /* FONT FOR ALBUM CAPTIONS */
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Pacifico&display=swap');
+
+        :root {
+            --bg-dusty-rose: #d8a4a4;
+            --card-cream: #fdf2f2;
+            --text-cocoa: #8d5d5d;
+            --btn-cocoa: #b37a7a;
+            --btn-shadow: rgba(0,0,0,0.1);
+            --photo-border: #c9184a; 
+            --label-pink: #d8436b;
+            --explorer-blue: #005A9E;
+            --washi-tape: rgba(216, 67, 107, 0.4);
+        }
+
+        * { box-sizing: border-box; margin:0; padding:0; font-family: 'Segoe UI', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-dusty-rose);
+            background-image: 
+                linear-gradient(90deg, rgba(255,255,255,.15) 50%, transparent 50%),
+                linear-gradient(rgba(255,255,255,.15) 50%, transparent 50%);
+            background-size: 40px 40px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-cream);
+            border-radius: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            text-align: center;
+            display: none;
+            padding: 30px 20px;
+            position: relative;
+            z-index: 10;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .active { display: block; }
+
+        /* ATM Interface */
+        #atmPage { 
+            width: 100%; 
+            max-width: 380px; 
+            overflow-y: hidden;
+            max-height: none;
+        }
+        
+        .cute-msg {
+            font-family: 'Caveat', cursive;
+            font-size: 1.4rem;
+            color: var(--label-pink);
+            margin: 10px 0 20px;
+            font-weight: bold;
+        }
+
+        .pin-line { 
+            background: white; height: 60px; border-radius: 15px; 
+            display: flex; align-items: center; justify-content: center; 
+            margin-bottom: 20px; font-size: 1.8rem; color: var(--text-cocoa); letter-spacing: 10px; 
+        }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .key { 
+            background: white; border: none; height: 55px; border-radius: 15px; 
+            font-size: 1.2rem; font-weight: bold; color: var(--text-cocoa); 
+            cursor: pointer; box-shadow: 0 4px 0px var(--btn-shadow); 
+        }
+        .key.special { background: var(--btn-cocoa); color: white; font-size: 0.75rem; }
+        .enter-btn { 
+            grid-column: span 3; background: var(--btn-cocoa); color: white; 
+            height: 55px; border-radius: 15px; border: none; margin-top: 10px; 
+            font-size: 1.1rem; font-weight: bold; cursor: pointer; 
+        }
+
+        /* Selection Page */
+        #selectionPage { width: 90%; max-width: 800px; }
+        .selection-grid { display: flex; gap: 20px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
+        .select-btn {
+            background: var(--btn-cocoa);
+            width: 220px; height: 220px; border-radius: 35px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.3s; border: none; color: white;
+        }
+        .select-btn:hover { transform: translateY(-10px); }
+        .select-btn img { width: 60px; margin-bottom: 20px; filter: brightness(0) invert(1); }
+        .select-btn span { font-weight: bold; letter-spacing: 2px; font-size: 1.1rem; }
+
+        /* --- PHOTO WALL / ALBUM --- */
+        #polaroidPage { 
+            width: 95vw; 
+            max-width: 1100px; 
+            height: 90vh; 
+            padding: 20px;
+        }
+
+        .wall-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            padding: 50px 20px;
+            background-color: #fffaf0;
+            background-image: radial-gradient(#d8a4a4 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
+            border-radius: 20px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.05);
+        }
+
+        @media (min-width: 768px) {
+            .wall-layout { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+        }
+
+        .photo-frame {
+            background: white;
+            padding: 12px 12px 25px 12px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        /* Washi Tape Effect */
+        .photo-frame::before {
+            content: "";
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 30px;
+            background: var(--washi-tape);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+            z-index: 2;
+        }
+
+        .photo-frame:hover {
+            transform: scale(1.05) rotate(0deg) !important;
+            z-index: 20;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+
+        /* Random Rotations for Album Look */
+        .photo-frame:nth-child(odd) { transform: rotate(-3deg); }
+        .photo-frame:nth-child(even) { transform: rotate(2deg); }
+        .photo-frame:nth-child(3n) { transform: rotate(4deg); }
+
+        .photo-frame img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            border: 1px solid #eee;
+        }
+
+        .photo-frame .caption {
+            font-family: 'Caveat', cursive;
+            font-size: 1.4rem;
+            color: var(--text-cocoa);
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .back-icon-btn {
+            position: fixed; bottom: 30px; right: 40px;
+            background: var(--photo-border); color: white;
+            border: none; width: 50px; height: 50px; border-radius: 50%;
+            cursor: pointer; font-size: 1.8rem; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Music Page */
+        .player-split { display: flex; gap: 20px; width: 100%; flex-wrap: wrap; }
+        .vase-box { background: #f8d7da; border: 5px solid #c9184a; border-radius: 20px; flex: 1; padding: 20px; min-width: 200px; }
+        .yt-box { background: #000; width: 100%; height: 250px; border-radius: 15px; margin-bottom: 10px; overflow: hidden; }
+        .yt-box video { width: 100%; height: 100%; object-fit: cover; }
+        
+        .back-btn, .proceed-btn, .music-play-btn { 
+            margin-top: 30px; border: none; padding: 12px 30px; border-radius: 12px; 
+            cursor: pointer; font-weight: bold; font-size: 1rem;
+        }
+        .music-play-btn { background: #c9184a; color: white; margin-top: 10px; width: 100%; }
+        .back-btn { background: var(--text-cocoa); color: white; margin-right: 15px; }
+        .proceed-btn { background: var(--photo-border); color: white; }
+
+        /* --- PROPOSAL WINDOW UPDATES --- */
+        #proposalPage {
+            width: 95%;
+            max-width: 450px;
+            padding: 20px;
+            overflow: hidden; /* Prevent container scroll */
+        }
+
+        .explorer-window {
+            background: #f0f0f0;
+            border: 3px solid #777;
+            border-radius: 10px;
+            width: 100%;
+            margin: 0 auto;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .explorer-titlebar {
+            background: linear-gradient(90deg, #ff4d6d, #ff8fa3);
+            color: white;
+            padding: 6px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .explorer-controls span {
+            display: inline-block;
+            width: 12px; height: 12px;
+            background: rgba(255,255,255,0.3);
+            margin-left: 5px;
+            border-radius: 3px;
+        }
+
+        .explorer-content {
+            padding: 15px;
+            background: white;
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Bouncing Picture Frame - Box Style */
+        .bouncing-pic-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 5px 0;
+            min-height: 220px;
+        }
+
+        @keyframes frameBounce {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+        }
+
+        .bouncing-frame {
+            width: 200px;
+            height: 200px; /* Square box shape */
+            background: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px; /* Soft edges */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            animation: frameBounce 3s infinite ease-in-out;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .bouncing-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px; /* Soft edges on image */
+        }
+
+        .proposal-text {
+            font-family: 'Pacifico', cursive;
+            color: var(--photo-border);
+            font-size: 1.4rem;
+            margin: 10px 0 15px;
+        }
+
+        .explorer-btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        .exp-btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .exp-yes { background: #ff4d6d; color: white; border-color: #ff4d6d; }
+        .exp-no { background: #eee; color: #777; }
+
+        /* --- FIXED VIDEO OVERLAY STYLES --- */
+        #videoOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 1000; display: none;
+            justify-content: center; align-items: center;
+            padding: 20px;
+        }
+        .video-container {
+            background: white; padding: 20px; border-radius: 20px;
+            border: 8px solid var(--photo-border); 
+            position: relative;
+            width: 95%; max-width: 600px;
+            max-height: 90vh; /* Keeps the popup within the screen */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+        .local-video-wrapper {
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            background: black;
+            flex-shrink: 1; /* Allows the video to shrink if screen is small */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #valVideo { 
+            width: 100%; 
+            max-height: 60vh; /* Limits video height so button isn't pushed out */
+            display: block; 
+            object-fit: contain; 
+        }
+        
+        /* Error Box */
+        #errorBox {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #fff; border: 2px solid red; padding: 20px; border-radius: 10px;
+            display: none; z-index: 2000; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="atmPage" class="container active">
+        <div style="font-size: 2rem; margin-bottom: 5px;">💝</div>
+        <h2 style="color: var(--text-cocoa); font-size: 1.5rem;">ENTER PASSWORD</h2>
+        <div class="cute-msg">Hi my Love! I made this just for you ❤️</div>
+        <div class="pin-line" id="pinDisplay">_ _ _ _ _</div>
+        <div class="keypad">
+            <button class="key" onclick="press(1)">1</button><button class="key" onclick="press(2)">2</button><button class="key" onclick="press(3)">3</button>
+            <button class="key" onclick="press(4)">4</button><button class="key" onclick="press(5)">5</button><button class="key" onclick="press(6)">6</button>
+            <button class="key" onclick="press(7)">7</button><button class="key" onclick="press(8)">8</button><button class="key" onclick="press(9)">9</button>
+            <button class="key special" onclick="clearPin()">CLEAR</button><button class="key" onclick="press(0)">0</button><button class="key special" onclick="backspace()">←</button>
+            <button class="enter-btn" onclick="checkPin()">ENTER ✓</button>
+        </div>
+    </div>
+
+    <div id="selectionPage" class="container">
+        <h1>PRESENTS FOR YOU</h1>
+        <p class="subtitle">CLICK ANY BUTTON TO OPEN</p>
+        <div class="selection-grid">
+            <div class="select-btn" onclick="showPage('polaroidPage')">
+                <img src="https://cdn-icons-png.flaticon.com/512/3342/3342137.png" alt="Photos">
+                <span>PHOTOS</span>
+            </div>
+            <div class="select-btn" onclick="showPage('musicPage')">
+                <img src="https://cdn-icons-png.flaticon.com/512/3083/3083417.png" alt="Music">
+                <span>MUSIC</span>
+            </div>
+            <div class="select-btn" onclick="showPage('letterPage')">
+                <img src="https://cdn-icons-png.flaticon.com/512/2099/2099199.png" alt="Letter">
+                <span>LETTER</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="polaroidPage" class="container">
+        <h1 style="font-family: 'Pacifico', cursive; color: var(--photo-border); margin-bottom: 20px;">Our Memory Album</h1>
+        <div class="wall-layout">
+            <div class="photo-frame"><img src="val1 (1).jpg"><div class="caption">Our First Date ✨</div></div>
+            <div class="photo-frame"><img src="val1 (8).jpg"><div class="caption">Under the Stars 🌌</div></div>
+            <div class="photo-frame"><img src="val1 (12).jpg"><div class="caption">Pure Happiness 💖</div></div>
+            <div class="photo-frame"><img src="val1 (9).jpg"><div class="caption">That Beautiful Smile</div></div>
+            <div class="photo-frame"><img src="val1 (3).jpg"><div class="caption">Best Moments Together</div></div>
+            <div class="photo-frame"><img src="window.jpg"><div class="caption">Forever Goals 🔒</div></div>
+            <div class="photo-frame"><img src="val1 (6).jpg"><div class="caption">Better Together 🌹</div></div>
+            <div class="photo-frame"><img src="val1 (16).jpg"><div class="caption">My Only Sunshine</div></div>
+            <div class="photo-frame"><img src="val1 (10).jpg"><div class="caption">Sweetest Adventure 🗺️</div></div>
+            <div class="photo-frame"><img src="val1 (24).jpg"><div class="caption">Better Together 🌹</div></div>
+            <div class="photo-frame"><img src="val1 (7).jpg"><div class="caption">My Only Sunshine</div></div>
+            <div class="photo-frame"><img src="val1 (15).jpg"><div class="caption">Sweetest Adventure 🗺️</div></div>    
+        
+        </div>
+        <button class="back-icon-btn" onclick="showPage('selectionPage')">↩</button>
+    </div>
+
+    <div id="musicPage" class="container" style="width: 90%; max-width: 800px;">
+        <div class="player-split">
+            <div class="vase-box">
+                <div style="font-size: 5rem;">💐</div>
+                <p style="color:#c9184a; font-weight:bold; margin-top:20px;">I can’t listen to this without smiling because it makes me think of you</p>
+            </div>
+            <div class="player-box" style="flex:2; background:white; border-radius:20px; padding:20px; border:5px solid #c9184a;">
+                <div class="yt-box">
+                    <video id="musicPlayer" controls>
+                        <source src="KYGM (Live at The Cozy Cove) - The Ridleys.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div style="font-size: 1.5rem; color:#c9184a; font-weight: bold;">MY VALENTINE</div>
+                <button class="music-play-btn" onclick="playTheSong()">CLICK TO PLAY ❤️</button>
+            </div>
+        </div>
+        <button class="back-btn" onclick="showPage('selectionPage')">BACK</button>
+    </div>
+
+    <div id="letterPage" class="container" style="width: 90%; max-width: 600px;">
+        <h1>HI BABY!</h1>
+        <div style="background:white; padding:30px; border-radius:20px; border: 3px dashed var(--btn-cocoa); margin:20px 0;">
+            <p style="color:var(--text-cocoa);">Hi, baby! Happy first Valentine’s Day! Love, gaya ng lagi kong sinasabi, I thought talaga na you were just a random person na dadaan lang HAHAHAHA. I did not expect na aabot tayo dito. Sobrang thankful ako kasi dahil sa efforts and patience mo kaya tayo umabot sa kung ano tayo ngayon. It’s all because of you love with your kaharutan HAHAHAHA.
+
+Nung nagtuloy-tuloy na yung pag-uusap natin, ang dami kong nalaman about sayo at sobrang na-enjoy ko lahat yun. Kahit minsan hindi ako nabored love at nanibago pa ako noon kasi sobrang invested ako sa life mo, eh hindi naman ako madaling nagkakainteres sa buhay ng iba. Pero sayo lagi kong inaabangan yung mga kwento mo kasi ang cute-cute mo magkwento love, talagang detailed pero sinisingitan ng mga kaharutan HAHAHAHA. At first love nagtataka pa ako sa mga ganon mo kasi hindi pa ako sure sa intentions mo at that time, pero nung na-clear mo na, ayun sobrang cute mo kasi laging may pahabol na joke.
+
+Habang tumatagal yung pag-uusap natin baby, nagustuhan ko kung paano mo hinahandle yung mga slight misunderstandings natin. Yung mindset mo sobrang nakaka-attract love like no joke. Sobrang swerte ko sayo kasi ine-explain mo nang maayos love kahit pati ikaw naguguluhan na rin sa mga topak ko, and also yung mga bagay na wala akong idea love ine-explain mo rin nang maayos. Your choice of words din love and kung paano mo ine-express yung love mo for me kaya ang dali mong na-unlock yung sweet side ko na hindi ko alam na meron pala ako hehe.
+
+Sasabihin ko na rin dito love na during our VCs, sobrang nagagandahan ako sayo baby hehe like just being honest lang sobrang ganda mo. Hindi ako magsasawang ulit-ulitin yan baby at kung pwede lang ay araw-araw ko yan sasabihin sayo. Sobrang clueless pa ako before sa kung ano talaga nararamdaman ko, I just found out na lang na hindi na as friends yung gusto kong mangyari. I want you baby. Ikaw lang and gusto ko sayo lang ako.
+
+Ikaw lang yung nakikita kong kasama sa mga plans ko love. Pag iniisip ko yun, I feel more happy, contented and safe having you in the future that I want. I love the idea baby na ako na ang mag-aalaga sayo, tutulong sa mga problems mo and mag susuport sa mga gusto mo pang ma-achieve pag andun na tayo. Words are not enough baby para ma-express yung pagmamahal ko for you and you deserve every good thing in life baby. I’ll grab every chance baby para maging mas better for you, isa ka sa mga naging motivations ko ngayon love para mabigay ko yung future na deserve mo.
+
+I love you so much baby and that will never change no matter how big our arguments are. When it comes to you baby, alam kong nagiging soft and kumakalma ako which is nakakahappy kasi sayo ko na-fe-feel yan baby. Paulit-ulit na lang pero I’m so thankful to have you in this lifetime baby and I will always cherish our little moments hanggang sa we can finally see each other. Love isn’t always perfect baby pero mamahalin pa rin kita even when you’re mad, happy or sad, and even more at your lowest. I love you so much, baby. mahal na mahal na mahal kita. 💖</p>
+        </div>
+        <button class="back-btn" onclick="showPage('selectionPage')">BACK</button>
+        <button class="proceed-btn" onclick="showPage('proposalPage')">PROCEED</button>
+    </div>
+
+    <div id="proposalPage" class="container">
+        <div class="explorer-window">
+            <div class="explorer-titlebar">
+                <span>C:\Users\Love\Valentine.exe</span>
+                <div class="explorer-controls"><span></span><span></span><span></span></div>
+            </div>
+            <div class="explorer-content">
+                <div class="bouncing-pic-container">
+                    <div class="bouncing-frame">
+                        <img src="val1 (22).jpg" alt="Our Picture">
+                    </div>
+                </div>
+                
+                <h3 class="proposal-text">Will you be my Valentine?</h3>
+                <div class="explorer-btn-group">
+                    <button class="exp-yes exp-btn" onclick="showVideo()">YES! ❤️</button>
+                    <button class="exp-no exp-btn" onclick="showError()">No :(</button>
+                </div>
+            </div>
+        </div>
+        <button class="back-btn" onclick="showPage('letterPage')">BACK</button>
+    </div>
+
+    <div id="videoOverlay" onclick="closeVideo()">
+        <div class="video-container" onclick="event.stopPropagation()">
+            <h2 style="color:var(--photo-border); margin-bottom: 10px; font-family: 'Pacifico', cursive;">I knew It! ❤️</h2>
+            <div class="local-video-wrapper">
+                <video id="valVideo" controls>
+                    <source src="vid.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <button class="back-btn" onclick="closeVideo()" style="margin-top:15px; width: 100px;">CLOSE</button>
+        </div>
+    </div>
+
+    <div id="errorBox">
+        <h4 style="color:red;">⚠️ SYSTEM ERROR</h4>
+        <p>This action is not allowed. Please choose "YES".</p>
+        <button class="back-btn" style="background:red; margin-right:0;" onclick="closeError()">EXIT</button>
+    </div>
+
+    <script>
+        let currentPin = "";
+        const correctPin = "12525"; 
+
+        function press(num) {
+            if (currentPin.length < 5) {
+                currentPin += num; 
+                updateDisplay(); 
+            }
+        }
+        function clearPin() { currentPin = ""; updateDisplay(); }
+        function backspace() { currentPin = currentPin.slice(0, -1); updateDisplay(); }
+        
+        function updateDisplay() {
+            const display = document.getElementById('pinDisplay');
+            let masked = currentPin.split('').map(() => '●').join(' ');
+            let placeholders = "_ ".repeat(5 - currentPin.length);
+            display.innerText = (masked + " " + placeholders).trim();
+        }
+
+        function checkPin() {
+            if (currentPin === correctPin) {
+                showPage('selectionPage');
+            } else {
+                alert("Incorrect Password!");
+                clearPin();
+            }
+        }
+
+        function showPage(id) {
+            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function playTheSong() {
+            const song = document.getElementById('musicPlayer');
+            song.play();
+        }
+
+        function showVideo() {
+            document.getElementById('videoOverlay').style.display = 'flex';
+            const video = document.getElementById('valVideo');
+            video.play();
+        }
+        function closeVideo() {
+            document.getElementById('videoOverlay').style.display = 'none';
+            const video = document.getElementById('valVideo');
+            video.pause();
+            video.currentTime = 0;
+        }
+        function showError() {
+            document.getElementById('errorBox').style.display = 'block';
+        }
+        function closeError() {
+            document.getElementById('errorBox').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
